@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel de Análise ETE/ETAR | Braspine</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Google Fonts: Roboto -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+
+    <!-- Chart.js para os gráficos -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- Estilos Personalizados -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="antialiased text-slate-700 bg-slate-50 dark:bg-slate-900 dark:text-slate-300 transition-colors duration-300">
+
+    <!-- Container para Notificações (Toasts) -->
+    <div id="toast-container" class="fixed top-5 right-5 z-50 space-y-3"></div>
+
+    <!-- Cabeçalho -->
+    <header class="bg-white dark:bg-slate-800 shadow-md sticky top-0 z-40">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex items-center space-x-4">
+                    <img src="https://github.com/DiegoSutil/calculadora-de-lodo/blob/e6af6bb6071166eb8a6dfd01725ad76460471786/images/logo_braspine_horizontal_positivo_cor_rgb.png?raw=true" alt="Logo Braspine" class="h-8 w-auto logo-light" onerror="this.src='https://placehold.co/200x50/ffffff/333333?text=Braspine'; this.onerror=null;">
+                    <img src="https://raw.githubusercontent.com/DiegoSutil/calculadora-de-lodo/main/images/logo_braspine_horizontal_negativo_cor_rgb.png" alt="Logo Braspine Dark" class="h-8 w-auto logo-dark hidden" onerror="this.src='https://placehold.co/200x50/333333/ffffff?text=Braspine'; this.onerror=null;">
+                    <h1 class="text-xl font-bold text-slate-800 dark:text-white hidden sm:block">Painel de Análise ETE/ETAR</h1>
+                </div>
+                <div class="flex items-center gap-4">
+                    <div id="userIdDisplay" class="text-xs text-slate-500 dark:text-slate-400 break-all text-right">A carregar ID...</div>
+                    <button id="darkModeToggle" class="theme-toggle" title="Alterar tema">
+                        <svg class="sun-icon h-6 w-6 text-slate-600 dark:text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
+                        <svg class="moon-icon h-6 w-6 text-slate-600 dark:text-slate-300 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" /></svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Conteúdo Principal -->
+    <main class="container mx-auto p-4 sm:p-6 lg:p-8">
+        
+        <!-- Navegação Principal -->
+        <nav class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
+            <button id="showDashboard" class="nav-button active-nav-button group"><svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 20V10M18 20V4M6 20V16"/></svg><span>Dashboard</span></button>
+            <button id="showSludgeAge" class="nav-button group"><svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect></svg><span>Idade do Lodo</span></button>
+            <button id="showPhysicalChemical" class="nav-button group"><svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><line x1="10" y1="9" x2="8" y2="9"></line></svg><span>Eficiência FQ</span></button>
+            <button id="showOrganicLoad" class="nav-button group"><svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3v18h18"></path><path d="M18.7 8a6 6 0 0 0-6-6"></path><path d="M13 13a6 6 0 0 0 6 6"></path></svg><span>Carga Orgânica</span></button>
+            <button id="showSettings" class="nav-button group"><svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.096 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg><span>Configurações</span></button>
+            <button id="showHowItWorks" class="nav-button group"><svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.79 4 4 0 2.21-1.79 4-4 4-1.742 0-3.223-.835-3.772-2"></path><path d="M9 12l-2-2 2-2"></path></svg><span>Como Funciona</span></button>
+        </nav>
+
+        <!-- Container das Seções -->
+        <div class="relative">
+            <!-- Seção Dashboard -->
+            <section id="dashboardSection" class="section-content">
+                <div class="calculator-card p-6 lg:p-8">
+                    <div class="flex flex-wrap justify-between items-center mb-6 gap-4">
+                        <h2 class="text-2xl font-bold text-slate-800 dark:text-white">Dashboard de Gestão</h2>
+                        <div class="flex items-center gap-4">
+                             <div class="flex items-center gap-2">
+                                <label for="dateFilter" class="text-sm font-medium text-slate-600 dark:text-slate-400">Período:</label>
+                                <select id="dateFilter" class="custom-select w-auto"><option value="7">Últimos 7 dias</option><option value="30" selected>Últimos 30 dias</option><option value="90">Últimos 90 dias</option><option value="all">Todo o período</option></select>
+                             </div>
+                             <button id="exportCsvButton" class="action-button secondary-button flex items-center gap-2">
+                                <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                                <span>Exportar CSV</span>
+                             </button>
+                        </div>
+                    </div>
+                    <div id="kpiContainer" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8"><div class="kpi-card"><h3 class="kpi-title">Idade Média do Lodo</h3><p id="kpiSludgeAge" class="kpi-value">--</p></div><div class="kpi-card"><h3 class="kpi-title">Eficiência Média Remoção</h3><p id="kpiOrganicEfficiency" class="kpi-value">--</p></div><div class="kpi-card"><h3 class="kpi-title">Carga Orgânica Média</h3><p id="kpiInfluentLoad" class="kpi-value">--</p></div><div class="kpi-card"><h3 class="kpi-title">Eficiência Média Turbidez</h3><p id="kpiTurbidityEfficiency" class="kpi-value">--</p></div></div>
+                    <div class="bg-slate-50 dark:bg-slate-800 p-4 rounded-lg shadow-inner"><canvas id="trendsChart"></canvas></div>
+                </div>
+            </section>
+            
+            <!-- Seção Calculadora Idade do Lodo -->
+            <section id="sludgeAgeSection" class="section-content hidden-section">
+                <div class="calculator-card p-6 lg:p-8">
+                    <h2 class="text-2xl font-bold text-slate-800 dark:text-white mb-6">Calculadora de Idade do Lodo (ISR)</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                        <div><label for="aerationTankVolume">Volume do Tanque (m³)</label><input type="number" id="aerationTankVolume" placeholder="Ex: 500" class="custom-input w-full"></div>
+                        <div><label for="aerationTankVSS">SSV no Tanque (mg/L)</label><input type="number" id="aerationTankVSS" placeholder="Ex: 3000" class="custom-input w-full"></div>
+                        <div><label for="discardFlowRate">Vazão de Descarte (L/min)</label><input type="number" id="discardFlowRate" placeholder="Ex: 50" class="custom-input w-full"></div>
+                        <div><label for="discardVSS">SSV do Lodo Descartado (mg/L)</label><input type="number" id="discardVSS" placeholder="Ex: 8000" class="custom-input w-full"></div>
+                        <div><label for="effluentFlowRate">Vazão do Efluente (m³/dia)</label><input type="number" id="effluentFlowRate" placeholder="Ex: 400" class="custom-input w-full"></div>
+                        <div><label for="effluentVSS">SSV do Efluente (mg/L)</label><input type="number" id="effluentVSS" placeholder="Ex: 20" class="custom-input w-full"></div>
+                        <div class="md:col-span-2"><label for="sludgeAgeNote">Observações (opcional)</label><textarea id="sludgeAgeNote" placeholder="Ex: Dia de chuva intensa, teste de novo produto..." class="custom-input w-full" rows="2"></textarea></div>
+                    </div>
+                    <div class="flex flex-col sm:flex-row gap-4">
+                        <button id="calculateSludgeAgeButton" class="action-button primary-button w-full">Calcular</button>
+                        <button id="saveSludgeAgeData" class="action-button secondary-button w-full">Guardar Resultado</button>
+                    </div>
+                    <div id="sludgeAgeErrorDisplay" class="feedback-box error-box hidden mt-6"></div>
+                    <div id="sludgeAgeResultDisplay" class="feedback-box success-box hidden mt-6"><h3 class="font-bold">Idade do Lodo Calculada:</h3><p id="sludgeAgeResult" class="text-2xl font-bold"></p></div>
+                    <div id="sludgeAgeHistory" class="mt-8 history-table"></div>
+                </div>
+            </section>
+
+            <!-- Seção Eficiência Físico-Química -->
+            <section id="physicalChemicalSection" class="section-content hidden-section">
+                <div class="calculator-card p-6 lg:p-8">
+                    <h2 class="text-2xl font-bold text-slate-800 dark:text-white mb-6">Calculadora de Eficiência Físico-Química</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                        <div><label for="phyChemInitialTurbidity">Turbidez Inicial (NTU)</label><input type="number" id="phyChemInitialTurbidity" placeholder="Ex: 100" class="custom-input w-full"></div>
+                        <div><label for="phyChemFinalTurbidity">Turbidez Final (NTU)</label><input type="number" id="phyChemFinalTurbidity" placeholder="Ex: 5" class="custom-input w-full"></div>
+                        <div><label for="phyChemInitialColor">Cor Inicial (UH)</label><input type="number" id="phyChemInitialColor" placeholder="Ex: 50" class="custom-input w-full"></div>
+                        <div><label for="phyChemFinalColor">Cor Final (UH)</label><input type="number" id="phyChemFinalColor" placeholder="Ex: 2" class="custom-input w-full"></div>
+                        <div><label for="phyChemIdealDosage">Dosagem Ideal (Jar Test)</label><input type="number" id="phyChemIdealDosage" placeholder="Ex: 20" class="custom-input w-full"></div>
+                        <div><label for="phyChemDosageUnit">Unidade de Dosagem</label><select id="phyChemDosageUnit" class="custom-select w-full"><option value="mg/L">mg/L</option><option value="mL/L">mL/L</option></select></div>
+                        <div class="md:col-span-2"><label for="phyChemEtaFlowRate">Vazão da ETA (m³/dia)</label><input type="number" id="phyChemEtaFlowRate" placeholder="Ex: 5000" class="custom-input w-full"></div>
+                        <div class="md:col-span-2"><label for="phyChemNote">Observações (opcional)</label><textarea id="phyChemNote" placeholder="Ex: Teste com novo polímero..." class="custom-input w-full" rows="2"></textarea></div>
+                    </div>
+                    <div class="flex flex-col sm:flex-row gap-4">
+                        <button id="calculatePhysicalChemicalButton" class="action-button primary-button w-full">Calcular</button>
+                        <button id="savePhysicalChemicalData" class="action-button secondary-button w-full">Guardar Resultado</button>
+                    </div>
+                    <div id="phyChemErrorDisplay" class="feedback-box error-box hidden mt-6"></div>
+                    <div id="phyChemResultDisplay" class="feedback-box success-box hidden mt-6"><h3 class="font-bold mb-2">Resultados da Eficiência:</h3><div class="space-y-2"><p><strong>Remoção de Turbidez:</strong> <span id="phyChemTurbidityEfficiency">-- %</span></p><p><strong>Remoção de Cor:</strong> <span id="phyChemColorEfficiency">-- %</span></p><p><strong>Dosagem Diária:</strong> <span id="phyChemDailyDosage">--</span></p></div></div>
+                    <div id="physicalChemicalHistory" class="mt-8 history-table"></div>
+                </div>
+            </section>
+            
+            <!-- Seção Carga Orgânica -->
+            <section id="organicLoadSection" class="section-content hidden-section">
+                <div class="calculator-card p-6 lg:p-8">
+                     <h2 class="text-2xl font-bold text-slate-800 dark:text-white mb-6">Calculadora de Carga Orgânica (DBO/DQO)</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                        <div><label for="organicInfluentConcentration">Concentração Afluente (mg/L)</label><input type="number" id="organicInfluentConcentration" placeholder="Ex: 300" class="custom-input w-full"></div>
+                        <div><label for="organicEffluentConcentration">Concentração Efluente (mg/L)</label><input type="number" id="organicEffluentConcentration" placeholder="Ex: 50" class="custom-input w-full"></div>
+                        <div class="md:col-span-2"><label for="organicLoadFlowRate">Vazão (m³/dia)</label><input type="number" id="organicLoadFlowRate" placeholder="Ex: 5000" class="custom-input w-full"></div>
+                        <div class="md:col-span-2"><label for="organicLoadNote">Observações (opcional)</label><textarea id="organicLoadNote" placeholder="Ex: Análise após paragem para manutenção..." class="custom-input w-full" rows="2"></textarea></div>
+                    </div>
+                     <div class="flex flex-col sm:flex-row gap-4">
+                        <button id="calculateOrganicLoadButton" class="action-button primary-button w-full">Calcular</button>
+                        <button id="saveOrganicLoadData" class="action-button secondary-button w-full">Guardar Resultado</button>
+                    </div>
+                    <div id="organicLoadErrorDisplay" class="feedback-box error-box hidden mt-6"></div>
+                    <div id="organicLoadResultDisplay" class="feedback-box success-box hidden mt-6"><h3 class="font-bold mb-2">Resultados da Carga Orgânica:</h3><div class="space-y-2"><p><strong>Carga Afluente:</strong> <span id="influentOrganicLoadResult">-- kg/dia</span></p><p><strong>Carga Efluente:</strong> <span id="effluentOrganicLoadResult">-- kg/dia</span></p><p><strong>Eficiência de Remoção:</strong> <span id="organicLoadEfficiencyResult">-- %</span></p></div></div>
+                    <div id="organicLoadHistory" class="mt-8 history-table"></div>
+                </div>
+            </section>
+
+             <!-- Seção Configurações -->
+            <section id="settingsSection" class="section-content hidden-section">
+                 <div class="calculator-card p-6 lg:p-8">
+                     <h2 class="text-2xl font-bold text-slate-800 dark:text-white mb-6">Configurações de Metas</h2>
+                     <p class="text-slate-600 dark:text-slate-400 mb-6">Defina as suas próprias metas operacionais. Os resultados nas calculadoras e no dashboard serão coloridos com base nestes valores.</p>
+                     <div class="space-y-6">
+                        <div>
+                            <h3 class="text-lg font-semibold text-slate-700 dark:text-slate-200 mb-2">Idade do Lodo (ISR)</h3>
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div><label for="settingSludgeWarningLow">Zona de Atenção (Inferior)</label><input type="number" id="settingSludgeWarningLow" class="custom-input w-full" placeholder="Ex: 5"></div>
+                                <div><label for="settingSludgeIdealLow">Zona Ideal (Início)</label><input type="number" id="settingSludgeIdealLow" class="custom-input w-full" placeholder="Ex: 8"></div>
+                                <div><label for="settingSludgeIdealHigh">Zona Ideal (Fim)</label><input type="number" id="settingSludgeIdealHigh" class="custom-input w-full" placeholder="Ex: 15"></div>
+                            </div>
+                        </div>
+                     </div>
+                     <div class="mt-8"><button id="saveSettingsButton" class="action-button primary-button">Guardar Configurações</button></div>
+                </div>
+            </section>
+
+            <!-- Seção Como Funciona -->
+            <section id="howItWorksSection" class="section-content hidden-section">
+                 <div class="calculator-card p-6 lg:p-8 prose dark:prose-invert max-w-none"><h2 class="text-2xl font-bold text-slate-800 dark:text-white mb-6">Como Funciona a Aplicação</h2><p>Esta aplicação foi desenhada para simplificar os cálculos diários essenciais para o controlo de uma Estação de Tratamento de Efluentes (ETE) ou Águas Residuais (ETAR).</p><h3>Navegação</h3><p>Use os botões no topo da página para alternar entre o Dashboard, as calculadoras e as Configurações.</p><h3>Utilização das Calculadoras</h3><ol><li><strong>Preencha os campos:</strong> Insira os dados da sua estação nos campos correspondentes.</li><li><strong>Adicione Observações (Opcional):</strong> Anote qualquer evento relevante que possa ter influenciado o resultado.</li><li><strong>Calcular:</strong> Clique no botão "Calcular" para obter o resultado instantaneamente.</li><li><strong>Guardar Histórico:</strong> Clique em "Guardar Resultado". Os seus dados serão guardados de forma segura e ficarão disponíveis para consulta futura no histórico e no Dashboard.</li></ol><h3>Privacidade</h3><p>A sua privacidade é respeitada. A aplicação utiliza um sistema de autenticação anónima para guardar o seu histórico de cálculos sem recolher qualquer informação pessoal. Cada utilizador tem um ID único e anónimo.</p></div>
+            </section>
+        </div>
+    </main>
+
+    <!-- Rodapé -->
+    <footer class="text-center py-6 mt-8"><p class="text-sm text-slate-500 dark:text-slate-400">Desenvolvido por Diego Machado Sutil</p></footer>
+    <!-- Modal de Confirmação -->
+    <div id="confirmModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden items-center justify-center"><div class="bg-white dark:bg-slate-800 rounded-lg shadow-xl p-6 w-full max-w-sm mx-4"><h3 id="confirmModalTitle" class="text-lg font-bold text-slate-800 dark:text-white mb-4">Confirmar Ação</h3><p id="confirmModalMessage" class="text-slate-600 dark:text-slate-300 mb-6">Tem a certeza que deseja excluir este registo?</p><div class="flex justify-end gap-4"><button id="confirmModalCancel" class="action-button secondary-button">Cancelar</button><button id="confirmModalOk" class="action-button danger-button">Excluir</button></div></div></div>
+    <!-- Script Principal -->
+    <script src="script.js" type="module"></script>
+</body>
+</html>
