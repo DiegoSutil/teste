@@ -33,8 +33,7 @@ textarea.custom-input { resize: vertical; }
 
 /* --- DARK MODE TOGGLE --- */
 .theme-toggle { @apply p-1 rounded-full hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors; }
-.dark .sun-icon { display: none; }
-.dark .moon-icon { display: block; }
+/* As regras para esconder/mostrar ícones foram removidas daqui para serem controladas apenas pelo JS */
 
 /* --- NOTIFICAÇÕES (TOASTS) --- */
 #toast-container { width: 320px; }
