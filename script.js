@@ -36,17 +36,24 @@ document.addEventListener('DOMContentLoaded', () => {
     function showError(id, message) { getEl(id).textContent = message; getEl(id).classList.remove('hidden'); }
     
     /**
-     * Aplica o tema (dark/light) à aplicação.
-     * Esta função apenas adiciona ou remove a classe 'dark' do elemento <html>.
-     * O CSS trata de mostrar/esconder os ícones corretos.
+     * Aplica o tema (dark/light) à aplicação de forma robusta.
+     * Adiciona/remove a classe 'dark' do <html> e controla diretamente
+     * a visibilidade dos ícones para evitar problemas de cache/CSS.
      * @param {string} theme - O tema a ser aplicado ('dark' ou 'light').
      */
     function applyTheme(theme) {
         const htmlEl = document.documentElement;
+        const sunIcon = getEl('darkModeToggle').querySelector('.sun-icon');
+        const moonIcon = getEl('darkModeToggle').querySelector('.moon-icon');
+
         if (theme === 'dark') {
             htmlEl.classList.add('dark');
+            sunIcon.classList.add('hidden');
+            moonIcon.classList.remove('hidden');
         } else {
             htmlEl.classList.remove('dark');
+            sunIcon.classList.remove('hidden');
+            moonIcon.classList.add('hidden');
         }
     }
 
