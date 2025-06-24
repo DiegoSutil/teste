@@ -34,18 +34,22 @@ document.addEventListener('DOMContentLoaded', () => {
     // Funções de manipulação da UI
     function hideError(id) { getEl(id).classList.add('hidden'); getEl(id).textContent = ''; }
     function showError(id, message) { getEl(id).textContent = message; getEl(id).classList.remove('hidden'); }
+    
+    /**
+     * Aplica o tema (dark/light) à aplicação.
+     * Esta função apenas adiciona ou remove a classe 'dark' do elemento <html>.
+     * O CSS trata de mostrar/esconder os ícones corretos.
+     * @param {string} theme - O tema a ser aplicado ('dark' ou 'light').
+     */
     function applyTheme(theme) {
         const htmlEl = document.documentElement;
         if (theme === 'dark') {
             htmlEl.classList.add('dark');
-            getEl('darkModeToggle').querySelector('.sun-icon').style.display = 'none';
-            getEl('darkModeToggle').querySelector('.moon-icon').style.display = 'block';
         } else {
             htmlEl.classList.remove('dark');
-            getEl('darkModeToggle').querySelector('.sun-icon').style.display = 'block';
-            getEl('darkModeToggle').querySelector('.moon-icon').style.display = 'none';
         }
     }
+
     function showToast(message, type = 'success') {
         const container = getEl('toast-container');
         const toast = document.createElement('div');
@@ -250,28 +254,36 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- 3. EXECUÇÃO INICIAL E EVENT LISTENERS ---
     function initializeAppLogic() {
+        // Navegação
         const navButtons = { 'dashboardSection': 'showDashboard', 'sludgeAgeSection': 'showSludgeAge', 'physicalChemicalSection': 'showPhysicalChemical', 'organicLoadSection': 'showOrganicLoad', 'settingsSection': 'showSettings', 'howItWorksSection': 'showHowItWorks' };
         Object.entries(navButtons).forEach(([sectionId, btnId]) => getEl(btnId).addEventListener('click', () => showSection(sectionId)));
         
+        // Ações de Cálculo
         getEl('calculateSludgeAgeButton').addEventListener('click', calculateSludgeAge);
         getEl('calculatePhysicalChemicalButton').addEventListener('click', calculatePhysicalChemical);
         getEl('calculateOrganicLoadButton').addEventListener('click', calculateOrganicLoad);
         
+        // Ações de Guardar
         getEl('saveSludgeAgeData').addEventListener('click', () => { const data = calculateSludgeAge(); if (data) saveData('sludgeAgeCalculations', data); });
         getEl('savePhysicalChemicalData').addEventListener('click', () => { const data = calculatePhysicalChemical(); if (data) saveData('physicalChemicalCalculations',data); });
         getEl('saveOrganicLoadData').addEventListener('click', () => { const data = calculateOrganicLoad(); if (data) saveData('organicLoadCalculations', data); });
         
+        // Outras Ações
         getEl('saveSettingsButton').addEventListener('click', saveUserSettings);
         getEl('exportCsvButton').addEventListener('click', exportToCSV);
         getEl('dateFilter').addEventListener('change', updateDashboard);
         getEl('darkModeToggle').addEventListener('click', () => { const newTheme = document.documentElement.classList.contains('dark') ? 'light' : 'dark'; localStorage.setItem('theme', newTheme); applyTheme(newTheme); });
         getEl('confirmModalCancel').addEventListener('click', hideConfirmModal);
         
+        // Estado Inicial da UI
         applyTheme(localStorage.getItem('theme') || 'light');
         setSaveButtonsState(false);
         showSection('dashboardSection');
+        
+        // Iniciar Firebase (que depois chama as funções de carregamento de dados)
         initializeFirebase();
     }
 
+    // Ponto de entrada da aplicação
     initializeAppLogic();
 });
