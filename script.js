@@ -24,7 +24,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
     const appId = firebaseConfig.projectId;
 
-    // --- 2. DECLARAÇÃO DE TODAS AS FUNÇÕES (A DEFINIÇÃO VEM ANTES DO USO) ---
+    // --- 2. DECLARAÇÃO DE TODAS AS FUNÇÕES ---
 
     // Funções auxiliares genéricas
     const getEl = (id) => document.getElementById(id);
@@ -82,9 +82,50 @@ document.addEventListener('DOMContentLoaded', () => {
         if (type === 'efficiency') { if (value >= 80) return 'result-positive'; if (value >= 60) return 'result-warning'; return 'result-negative'; }
         return '';
     };
-    const calculateSludgeAge = () => { /* ... (código da função sem alterações) ... */ return { note: getVal('sludgeAgeNote'), calculatedISR: 10 }; };
-    const calculatePhysicalChemical = () => { /* ... (código da função sem alterações) ... */ return { note: getVal('phyChemNote'), turbidityEfficiency: 90 }; };
-    const calculateOrganicLoad = () => { /* ... (código da função sem alterações) ... */ return { note: getVal('organicLoadNote'), efficiency: 85 }; };
+    const calculateSludgeAge = () => {
+        hideError('sludgeAgeErrorDisplay');
+        const inputs = { aerationTankVolume: getNum('aerationTankVolume'), aerationTankVSS: getNum('aerationTankVSS'), discardFlowRate: getNum('discardFlowRate'), discardVSS: getNum('discardVSS'), effluentFlowRate: getNum('effluentFlowRate'), effluentVSS: getNum('effluentVSS'), };
+        if (Object.values(inputs).some(isNaN) || Object.values(inputs).some(v => v < 0)) { showError('sludgeAgeErrorDisplay', 'Por favor, preencha todos os campos com valores numéricos positivos válidos.'); return null; }
+        const massInTank = inputs.aerationTankVolume * 1000 * inputs.aerationTankVSS;
+        const massDiscarded = inputs.discardFlowRate * 1440 * inputs.discardVSS;
+        const massInEffluent = inputs.effluentFlowRate * 1000 * inputs.effluentVSS;
+        const denominator = massDiscarded + massInEffluent;
+        if (denominator === 0) { showError('sludgeAgeErrorDisplay', 'A soma das massas de SSV removidas é zero.'); return null; }
+        const calculatedISR = massInTank / denominator;
+        const resultSpan = getEl('sludgeAgeResult');
+        resultSpan.textContent = `${calculatedISR.toFixed(2)} dias`;
+        resultSpan.className = `text-2xl font-bold ${getResultColorClass(calculatedISR, 'sludgeAge')}`;
+        getEl('sludgeAgeResultDisplay').classList.remove('hidden');
+        return { ...inputs, note: getVal('sludgeAgeNote'), calculatedISR };
+    };
+    const calculatePhysicalChemical = () => {
+        hideError('phyChemErrorDisplay');
+        const inputs = { initialTurbidity: getNum('phyChemInitialTurbidity'), finalTurbidity: getNum('phyChemFinalTurbidity'), initialColor: getNum('phyChemInitialColor'), finalColor: getNum('phyChemFinalColor'), idealDosage: getNum('phyChemIdealDosage'), etaFlowRate: getNum('phyChemEtaFlowRate'), dosageUnit: getVal('phyChemDosageUnit') };
+        if (Object.values(inputs).slice(0, 6).some(isNaN) || Object.values(inputs).some(v => v < 0)) { showError('phyChemErrorDisplay', 'Por favor, preencha todos os campos com valores numéricos positivos.'); return null; }
+        const turbidityEfficiency = inputs.initialTurbidity > 0 ? ((inputs.initialTurbidity - inputs.finalTurbidity) / inputs.initialTurbidity) * 100 : (inputs.finalTurbidity === 0 ? 100 : 0);
+        const colorEfficiency = inputs.initialColor > 0 ? ((inputs.initialColor - inputs.finalColor) / inputs.initialColor) * 100 : (inputs.finalColor === 0 ? 100 : 0);
+        const dailyDosage = inputs.dosageUnit === 'mg/L' ? (inputs.idealDosage * inputs.etaFlowRate) / 1000 : inputs.idealDosage * inputs.etaFlowRate;
+        const dailyDosageUnit = inputs.dosageUnit === 'mg/L' ? 'kg/dia' : 'L/dia';
+        getEl('phyChemTurbidityEfficiency').textContent = `${turbidityEfficiency.toFixed(2)} %`;
+        getEl('phyChemColorEfficiency').textContent = `${colorEfficiency.toFixed(2)} %`;
+        getEl('phyChemDailyDosage').textContent = `${dailyDosage.toFixed(2)} ${dailyDosageUnit}`;
+        getEl('phyChemResultDisplay').classList.remove('hidden');
+        return { ...inputs, note: getVal('phyChemNote'), turbidityEfficiency, colorEfficiency, dailyDosage, dailyDosageUnit };
+    };
+    const calculateOrganicLoad = () => {
+        hideError('organicLoadErrorDisplay');
+        const inputs = { influentConcentration: getNum('organicInfluentConcentration'), effluentConcentration: getNum('organicEffluentConcentration'), flowRate: getNum('organicLoadFlowRate') };
+        if (Object.values(inputs).some(isNaN) || Object.values(inputs).some(v => v < 0)) { showError('organicLoadErrorDisplay', 'Por favor, preencha todos os campos com valores numéricos positivos.'); return null; }
+        const influentLoad = (inputs.influentConcentration * inputs.flowRate) / 1000;
+        const effluentLoad = (inputs.effluentConcentration * inputs.flowRate) / 1000;
+        const efficiency = influentLoad > 0 ? ((influentLoad - effluentLoad) / influentLoad) * 100 : 0;
+        getEl('influentOrganicLoadResult').textContent = `${influentLoad.toFixed(2)} kg/dia`;
+        getEl('effluentOrganicLoadResult').textContent = `${effluentLoad.toFixed(2)} kg/dia`;
+        getEl('organicLoadEfficiencyResult').textContent = `${efficiency.toFixed(2)} %`;
+        getEl('organicLoadEfficiencyResult').className = `font-semibold ${getResultColorClass(efficiency, 'efficiency')}`;
+        getEl('organicLoadResultDisplay').classList.remove('hidden');
+        return { ...inputs, note: getVal('organicLoadNote'), influentLoad, effluentLoad, efficiency };
+    };
 
     // Funções de gestão de dados (Firebase)
     const saveData = async (collectionName, data) => { if (!isFirebaseInitialized) { showToast('A ligação à base de dados falhou.', 'error'); return; } try { await addDoc(collection(db, `artifacts/${appId}/users/${currentUserId}/${collectionName}`), { ...data, timestamp: new Date() }); showToast('Dados guardados com sucesso!'); } catch (e) { showToast('Erro ao guardar dados.', 'error'); console.error(e); } };
@@ -117,6 +158,30 @@ document.addEventListener('DOMContentLoaded', () => {
         getEl('kpiInfluentLoad').textContent = `${calculateAverage(filtered.organic, 'influentLoad').toFixed(2)} kg/dia`;
         getEl('kpiTurbidityEfficiency').textContent = `${calculateAverage(filtered.phyChem, 'turbidityEfficiency').toFixed(2)} %`;
         renderTrendsChart(filtered.sludge, filtered.organic);
+    };
+    
+    const exportToCSV = () => {
+        const headers = ['Data', 'Tipo', 'Resultado Principal', 'Observações', 'Dados Completos'];
+        const rows = [];
+        const filterAndMap = (data, type, resultKey) => {
+            const filterValue = getVal('dateFilter');
+            const now = new Date();
+            const filterDate = new Date();
+            if (filterValue !== 'all') filterDate.setDate(now.getDate() - parseInt(filterValue));
+            const filteredData = (filterValue === 'all') ? data : data.filter(entry => entry.timestamp.toDate() >= filterDate);
+            filteredData.forEach(entry => { rows.push([ entry.timestamp.toDate().toLocaleString('pt-BR'), type, entry[resultKey]?.toFixed(2) || 'N/A', `"${(entry.note || '').replace(/"/g, '""')}"`, `"${JSON.stringify(entry).replace(/"/g, '""')}"` ].join(',')); });
+        };
+        filterAndMap(historyData.sludge, 'Idade do Lodo', 'calculatedISR');
+        filterAndMap(historyData.organic, 'Carga Orgânica', 'efficiency');
+        filterAndMap(historyData.phyChem, 'Físico-Químico', 'turbidityEfficiency');
+        const csvContent = "data:text/csv;charset=utf-8," + [headers.join(','), ...rows].join('\n');
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", "relatorio_ete_analise.csv");
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
     };
     
     // Funções de gestão de histórico
@@ -174,7 +239,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     getEl('userIdDisplay').textContent = `ID Anónimo: ${currentUserId.substring(0, 8)}...`;
                     setSaveButtonsState(true);
                     loadUserSettings();
-                    loadAllHistories(); // Agora esta função está definida
+                    loadAllHistories();
                 } else {
                     setSaveButtonsState(false);
                     signInAnonymously(auth).catch(e => console.error("Erro no sign-in anónimo:", e));
@@ -183,29 +248,28 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (e) { console.error("Erro fatal ao inicializar Firebase SDK:", e); getEl('userIdDisplay').textContent = `DB Offline`; setSaveButtonsState(false); }
     };
 
-    // --- 3. EXECUÇÃO INICIAL ---
+    // --- 3. EXECUÇÃO INICIAL E EVENT LISTENERS ---
     const initializeAppLogic = () => {
-        // Event Listeners
         const navButtons = { 'dashboardSection': 'showDashboard', 'sludgeAgeSection': 'showSludgeAge', 'physicalChemicalSection': 'showPhysicalChemical', 'organicLoadSection': 'showOrganicLoad', 'settingsSection': 'showSettings', 'howItWorksSection': 'showHowItWorks' };
         Object.entries(navButtons).forEach(([sectionId, btnId]) => getEl(btnId).addEventListener('click', () => showSection(sectionId)));
+        
         getEl('calculateSludgeAgeButton').addEventListener('click', calculateSludgeAge);
         getEl('calculatePhysicalChemicalButton').addEventListener('click', calculatePhysicalChemical);
         getEl('calculateOrganicLoadButton').addEventListener('click', calculateOrganicLoad);
+        
         getEl('saveSludgeAgeData').addEventListener('click', () => { const data = calculateSludgeAge(); if (data) saveData('sludgeAgeCalculations', data); });
         getEl('savePhysicalChemicalData').addEventListener('click', () => { const data = calculatePhysicalChemical(); if (data) saveData('physicalChemicalCalculations',data); });
         getEl('saveOrganicLoadData').addEventListener('click', () => { const data = calculateOrganicLoad(); if (data) saveData('organicLoadCalculations', data); });
+        
         getEl('saveSettingsButton').addEventListener('click', saveUserSettings);
         getEl('exportCsvButton').addEventListener('click', exportToCSV);
         getEl('dateFilter').addEventListener('change', updateDashboard);
         getEl('darkModeToggle').addEventListener('click', () => { const newTheme = document.documentElement.classList.contains('dark') ? 'light' : 'dark'; localStorage.setItem('theme', newTheme); applyTheme(newTheme); });
         getEl('confirmModalCancel').addEventListener('click', hideConfirmModal);
         
-        // Estado inicial da UI
         applyTheme(localStorage.getItem('theme') || 'light');
         setSaveButtonsState(false);
         showSection('dashboardSection');
-        
-        // Iniciar Firebase
         initializeFirebase();
     };
 
