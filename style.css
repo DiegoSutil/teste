@@ -5,8 +5,7 @@ body {
 }
 
 /* --- LOGO LIGHT/DARK MODE --- */
-.dark .logo-light { display: none; }
-.dark .logo-dark { display: inline-block; }
+/* O JavaScript vai controlar qual logo é mostrado adicionando a classe 'hidden' */
 
 /* --- TRANSIÇÕES DE SECÇÃO --- */
 .section-content { transition: opacity 0.5s ease-in-out, transform 0.5s ease-in-out; }
@@ -33,7 +32,6 @@ textarea.custom-input { resize: vertical; }
 
 /* --- DARK MODE TOGGLE --- */
 .theme-toggle { @apply p-1 rounded-full hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors; }
-/* As regras para esconder/mostrar ícones foram removidas daqui para serem controladas apenas pelo JS */
 
 /* --- NOTIFICAÇÕES (TOASTS) --- */
 #toast-container { width: 320px; }
