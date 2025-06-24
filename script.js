@@ -24,17 +24,17 @@ document.addEventListener('DOMContentLoaded', () => {
     };
     const appId = firebaseConfig.projectId;
 
-    // --- 2. DECLARAÇÃO DE TODAS AS FUNÇÕES ---
+    // --- 2. DEFINIÇÃO DE TODAS AS FUNÇÕES ---
 
     // Funções auxiliares genéricas
-    const getEl = (id) => document.getElementById(id);
-    const getVal = (id) => getEl(id).value;
-    const getNum = (id) => parseFloat(getVal(id));
+    function getEl(id) { return document.getElementById(id); }
+    function getVal(id) { return getEl(id).value; }
+    function getNum(id) { return parseFloat(getVal(id)); }
 
     // Funções de manipulação da UI
-    const hideError = (id) => { getEl(id).classList.add('hidden'); getEl(id).textContent = ''; };
-    const showError = (id, message) => { getEl(id).textContent = message; getEl(id).classList.remove('hidden'); };
-    const applyTheme = (theme) => {
+    function hideError(id) { getEl(id).classList.add('hidden'); getEl(id).textContent = ''; }
+    function showError(id, message) { getEl(id).textContent = message; getEl(id).classList.remove('hidden'); }
+    function applyTheme(theme) {
         const htmlEl = document.documentElement;
         if (theme === 'dark') {
             htmlEl.classList.add('dark');
@@ -45,8 +45,8 @@ document.addEventListener('DOMContentLoaded', () => {
             getEl('darkModeToggle').querySelector('.sun-icon').style.display = 'block';
             getEl('darkModeToggle').querySelector('.moon-icon').style.display = 'none';
         }
-    };
-    const showToast = (message, type = 'success') => {
+    }
+    function showToast(message, type = 'success') {
         const container = getEl('toast-container');
         const toast = document.createElement('div');
         toast.className = `toast toast-${type}`;
@@ -56,16 +56,16 @@ document.addEventListener('DOMContentLoaded', () => {
             toast.classList.add('toast-out');
             toast.addEventListener('animationend', () => toast.remove());
         }, 3000);
-    };
-    const setSaveButtonsState = (enabled) => {
+    }
+    function setSaveButtonsState(enabled) {
         [getEl('saveSludgeAgeData'), getEl('savePhysicalChemicalData'), getEl('saveOrganicLoadData')].forEach(button => {
             if (button) {
                 button.disabled = !enabled;
                 button.title = enabled ? 'Guardar o resultado no histórico' : 'A ligar à base de dados...';
             }
         });
-    };
-    const showSection = (targetId) => {
+    }
+    function showSection(targetId) {
         const sections = ['dashboardSection', 'sludgeAgeSection', 'physicalChemicalSection', 'organicLoadSection', 'settingsSection', 'howItWorksSection'];
         const navButtons = { 'dashboardSection': 'showDashboard', 'sludgeAgeSection': 'showSludgeAge', 'physicalChemicalSection': 'showPhysicalChemical', 'organicLoadSection': 'showOrganicLoad', 'settingsSection': 'showSettings', 'howItWorksSection': 'showHowItWorks' };
         sections.forEach(id => {
@@ -74,17 +74,17 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         Object.values(navButtons).forEach(btnId => getEl(btnId).classList.remove('active-nav-button'));
         getEl(navButtons[targetId]).classList.add('active-nav-button');
-    };
+    }
 
     // Funções de cálculo
-    const getResultColorClass = (value, type) => {
+    function getResultColorClass(value, type) {
         if (type === 'sludgeAge') { const { warningLow, idealLow, idealHigh } = userSettings.sludge; if (value >= idealLow && value <= idealHigh) return 'result-positive'; if (value < idealLow && value >= warningLow) return 'result-warning'; return 'result-negative'; }
         if (type === 'efficiency') { if (value >= 80) return 'result-positive'; if (value >= 60) return 'result-warning'; return 'result-negative'; }
         return '';
-    };
-    const calculateSludgeAge = () => {
+    }
+    function calculateSludgeAge() {
         hideError('sludgeAgeErrorDisplay');
-        const inputs = { aerationTankVolume: getNum('aerationTankVolume'), aerationTankVSS: getNum('aerationTankVSS'), discardFlowRate: getNum('discardFlowRate'), discardVSS: getNum('discardVSS'), effluentFlowRate: getNum('effluentFlowRate'), effluentVSS: getNum('effluentVSS'), };
+        const inputs = { aerationTankVolume: getNum('aerationTankVolume'), aerationTankVSS: getNum('aerationTankVSS'), discardFlowRate: getNum('discardFlowRate'), discardVSS: getNum('discardVSS'), effluentFlowRate: getNum('effluentFlowRate'), effluentVSS: getNum('effluentVSS') };
         if (Object.values(inputs).some(isNaN) || Object.values(inputs).some(v => v < 0)) { showError('sludgeAgeErrorDisplay', 'Por favor, preencha todos os campos com valores numéricos positivos válidos.'); return null; }
         const massInTank = inputs.aerationTankVolume * 1000 * inputs.aerationTankVSS;
         const massDiscarded = inputs.discardFlowRate * 1440 * inputs.discardVSS;
@@ -97,8 +97,8 @@ document.addEventListener('DOMContentLoaded', () => {
         resultSpan.className = `text-2xl font-bold ${getResultColorClass(calculatedISR, 'sludgeAge')}`;
         getEl('sludgeAgeResultDisplay').classList.remove('hidden');
         return { ...inputs, note: getVal('sludgeAgeNote'), calculatedISR };
-    };
-    const calculatePhysicalChemical = () => {
+    }
+    function calculatePhysicalChemical() {
         hideError('phyChemErrorDisplay');
         const inputs = { initialTurbidity: getNum('phyChemInitialTurbidity'), finalTurbidity: getNum('phyChemFinalTurbidity'), initialColor: getNum('phyChemInitialColor'), finalColor: getNum('phyChemFinalColor'), idealDosage: getNum('phyChemIdealDosage'), etaFlowRate: getNum('phyChemEtaFlowRate'), dosageUnit: getVal('phyChemDosageUnit') };
         if (Object.values(inputs).slice(0, 6).some(isNaN) || Object.values(inputs).some(v => v < 0)) { showError('phyChemErrorDisplay', 'Por favor, preencha todos os campos com valores numéricos positivos.'); return null; }
@@ -111,8 +111,8 @@ document.addEventListener('DOMContentLoaded', () => {
         getEl('phyChemDailyDosage').textContent = `${dailyDosage.toFixed(2)} ${dailyDosageUnit}`;
         getEl('phyChemResultDisplay').classList.remove('hidden');
         return { ...inputs, note: getVal('phyChemNote'), turbidityEfficiency, colorEfficiency, dailyDosage, dailyDosageUnit };
-    };
-    const calculateOrganicLoad = () => {
+    }
+    function calculateOrganicLoad() {
         hideError('organicLoadErrorDisplay');
         const inputs = { influentConcentration: getNum('organicInfluentConcentration'), effluentConcentration: getNum('organicEffluentConcentration'), flowRate: getNum('organicLoadFlowRate') };
         if (Object.values(inputs).some(isNaN) || Object.values(inputs).some(v => v < 0)) { showError('organicLoadErrorDisplay', 'Por favor, preencha todos os campos com valores numéricos positivos.'); return null; }
@@ -125,27 +125,27 @@ document.addEventListener('DOMContentLoaded', () => {
         getEl('organicLoadEfficiencyResult').className = `font-semibold ${getResultColorClass(efficiency, 'efficiency')}`;
         getEl('organicLoadResultDisplay').classList.remove('hidden');
         return { ...inputs, note: getVal('organicLoadNote'), influentLoad, effluentLoad, efficiency };
-    };
+    }
 
     // Funções de gestão de dados (Firebase)
-    const saveData = async (collectionName, data) => { if (!isFirebaseInitialized) { showToast('A ligação à base de dados falhou.', 'error'); return; } try { await addDoc(collection(db, `artifacts/${appId}/users/${currentUserId}/${collectionName}`), { ...data, timestamp: new Date() }); showToast('Dados guardados com sucesso!'); } catch (e) { showToast('Erro ao guardar dados.', 'error'); console.error(e); } };
-    const deleteData = async (collectionName, docId) => { if (!isFirebaseInitialized) { showToast('A ligação à base de dados falhou.', 'error'); return; } try { await deleteDoc(doc(db, `artifacts/${appId}/users/${currentUserId}/${collectionName}`, docId)); showToast('Registo excluído.'); } catch (e) { showToast('Erro ao excluir registo.', 'error'); console.error(e); } };
+    async function saveData(collectionName, data) { if (!isFirebaseInitialized) { showToast('A ligação à base de dados falhou.', 'error'); return; } try { await addDoc(collection(db, `artifacts/${appId}/users/${currentUserId}/${collectionName}`), { ...data, timestamp: new Date() }); showToast('Dados guardados com sucesso!'); } catch (e) { showToast('Erro ao guardar dados.', 'error'); console.error(e); } }
+    async function deleteData(collectionName, docId) { if (!isFirebaseInitialized) { showToast('A ligação à base de dados falhou.', 'error'); return; } try { await deleteDoc(doc(db, `artifacts/${appId}/users/${currentUserId}/${collectionName}`, docId)); showToast('Registo excluído.'); } catch (e) { showToast('Erro ao excluir registo.', 'error'); console.error(e); } }
     
     // Funções de Configurações do Utilizador
-    const updateSettingsUI = () => { getEl('settingSludgeWarningLow').value = userSettings.sludge.warningLow || ''; getEl('settingSludgeIdealLow').value = userSettings.sludge.idealLow || ''; getEl('settingSludgeIdealHigh').value = userSettings.sludge.idealHigh || ''; };
-    const loadUserSettings = async () => { if (!isFirebaseInitialized) return; const docRef = doc(db, `artifacts/${appId}/users/${currentUserId}/settings/userPreferences`); const docSnap = await getDoc(docRef); if (docSnap.exists()) { userSettings = { ...userSettings, ...docSnap.data() }; } updateSettingsUI(); };
-    const saveUserSettings = async () => { const newSettings = { sludge: { warningLow: getNum('settingSludgeWarningLow'), idealLow: getNum('settingSludgeIdealLow'), idealHigh: getNum('settingSludgeIdealHigh') }}; if (!isFirebaseInitialized) { showToast('Erro: Base de dados não está ligada.', 'error'); return; } const docRef = doc(db, `artifacts/${appId}/users/${currentUserId}/settings/userPreferences`); try { await setDoc(docRef, newSettings, { merge: true }); userSettings = { ...userSettings, ...newSettings }; showToast('Configurações guardadas!'); } catch (e) { showToast('Erro ao guardar configurações.', 'error'); console.error(e); } };
+    function updateSettingsUI() { getEl('settingSludgeWarningLow').value = userSettings.sludge.warningLow || ''; getEl('settingSludgeIdealLow').value = userSettings.sludge.idealLow || ''; getEl('settingSludgeIdealHigh').value = userSettings.sludge.idealHigh || ''; }
+    async function loadUserSettings() { if (!isFirebaseInitialized) return; const docRef = doc(db, `artifacts/${appId}/users/${currentUserId}/settings/userPreferences`); const docSnap = await getDoc(docRef); if (docSnap.exists()) { userSettings = { ...userSettings, ...docSnap.data() }; } updateSettingsUI(); }
+    async function saveUserSettings() { const newSettings = { sludge: { warningLow: getNum('settingSludgeWarningLow'), idealLow: getNum('settingSludgeIdealLow'), idealHigh: getNum('settingSludgeIdealHigh') }}; if (!isFirebaseInitialized) { showToast('Erro: Base de dados não está ligada.', 'error'); return; } const docRef = doc(db, `artifacts/${appId}/users/${currentUserId}/settings/userPreferences`); try { await setDoc(docRef, newSettings, { merge: true }); userSettings = { ...userSettings, ...newSettings }; showToast('Configurações guardadas!'); } catch (e) { showToast('Erro ao guardar configurações.', 'error'); console.error(e); } }
 
     // Funções de Dashboard e Gráficos
-    const renderTrendsChart = (sludgeData, organicData) => {
+    function renderTrendsChart(sludgeData, organicData) {
         const ctx = getEl('trendsChart').getContext('2d');
         const allData = [...sludgeData, ...organicData].sort((a,b) => a.timestamp.toDate() - b.timestamp.toDate());
         const labels = [...new Set(allData.map(d => d.timestamp.toDate().toLocaleDateString('pt-BR')))];
         const mapDataToLabels = (data, key) => labels.map(label => data.find(d => d.timestamp.toDate().toLocaleDateString('pt-BR') === label)?.[key] ?? null);
         if (trendsChart) trendsChart.destroy();
         trendsChart = new Chart(ctx, { type: 'line', data: { labels: labels, datasets: [ { label: 'Idade do Lodo (dias)', data: mapDataToLabels(sludgeData, 'calculatedISR'), borderColor: 'rgb(59, 130, 246)', backgroundColor: 'rgba(59, 130, 246, 0.5)', yAxisID: 'y', spanGaps: true }, { label: 'Eficiência Remoção (%)', data: mapDataToLabels(organicData, 'efficiency'), borderColor: 'rgb(22, 163, 74)', backgroundColor: 'rgba(22, 163, 74, 0.5)', yAxisID: 'y1', spanGaps: true } ] }, options: { responsive: true, maintainAspectRatio: false, scales: { y: { type: 'linear', display: true, position: 'left', title: { display: true, text: 'Idade do Lodo (dias)'} }, y1: { type: 'linear', display: true, position: 'right', title: { display: true, text: 'Eficiência (%)'}, grid: { drawOnChartArea: false } } } } });
-    };
-    const updateDashboard = () => {
+    }
+    function updateDashboard() {
         const filterValue = getVal('dateFilter');
         const now = new Date();
         const filterDate = new Date();
@@ -158,9 +158,9 @@ document.addEventListener('DOMContentLoaded', () => {
         getEl('kpiInfluentLoad').textContent = `${calculateAverage(filtered.organic, 'influentLoad').toFixed(2)} kg/dia`;
         getEl('kpiTurbidityEfficiency').textContent = `${calculateAverage(filtered.phyChem, 'turbidityEfficiency').toFixed(2)} %`;
         renderTrendsChart(filtered.sludge, filtered.organic);
-    };
+    }
     
-    const exportToCSV = () => {
+    function exportToCSV() {
         const headers = ['Data', 'Tipo', 'Resultado Principal', 'Observações', 'Dados Completos'];
         const rows = [];
         const filterAndMap = (data, type, resultKey) => {
@@ -182,11 +182,11 @@ document.addEventListener('DOMContentLoaded', () => {
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
-    };
+    }
     
     // Funções de gestão de histórico
-    const hideConfirmModal = () => getEl('confirmModal').classList.add('hidden');
-    const showConfirmModal = (onConfirm) => {
+    function hideConfirmModal() { getEl('confirmModal').classList.add('hidden'); }
+    function showConfirmModal(onConfirm) {
         const confirmModal = getEl('confirmModal');
         const confirmModalOk = getEl('confirmModalOk');
         confirmModal.classList.add('flex');
@@ -194,8 +194,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const newOk = confirmModalOk.cloneNode(true);
         confirmModalOk.parentNode.replaceChild(newOk, confirmModalOk);
         newOk.addEventListener('click', () => { onConfirm(); hideConfirmModal(); });
-    };
-    const displayHistory = (elementId, collectionName, data, headers, dataRenderer, loadFunction) => {
+    }
+    function displayHistory(elementId, collectionName, data, headers, dataRenderer, loadFunction) {
         const historyElement = getEl(elementId);
         if (!historyElement) return;
         if (data.length === 0) { historyElement.innerHTML = `<p class="text-center text-sm text-slate-500 py-4">Nenhum histórico guardado.</p>`; return; }
@@ -208,8 +208,8 @@ document.addEventListener('DOMContentLoaded', () => {
         historyElement.innerHTML = tableHTML;
         historyElement.querySelectorAll('.load-btn').forEach(btn => btn.addEventListener('click', () => loadFunction(data.find(d => d.id === btn.dataset.id))));
         historyElement.querySelectorAll('.delete-btn').forEach(btn => btn.addEventListener('click', () => showConfirmModal(() => deleteData(collectionName, btn.dataset.id))));
-    };
-    const setupHistoryListener = (collectionName, dataKey, elementId, headers, dataRenderer, loadFunction) => {
+    }
+    function setupHistoryListener(collectionName, dataKey, elementId, headers, dataRenderer, loadFunction) {
         if (!isFirebaseInitialized) { const el = getEl(elementId); if (el) el.innerHTML = `<p class="text-center text-sm text-slate-500 py-4">Base de dados indisponível.</p>`; return; }
         const q = query(collection(db, `artifacts/${appId}/users/${currentUserId}/${collectionName}`), orderBy("timestamp", "desc"));
         onSnapshot(q, (snapshot) => {
@@ -217,15 +217,15 @@ document.addEventListener('DOMContentLoaded', () => {
             displayHistory(elementId, collectionName, historyData[dataKey], headers, dataRenderer, loadFunction);
             updateDashboard();
         }, (error) => console.error(`Erro ao carregar ${collectionName}:`, error));
-    };
-    const loadAllHistories = () => {
+    }
+    function loadAllHistories() {
         setupHistoryListener('sludgeAgeCalculations', 'sludge', 'sludgeAgeHistory', ['ISR (dias)'], (entry) => `<td class="${getResultColorClass(entry.calculatedISR, 'sludgeAge')}">${entry.calculatedISR.toFixed(2)}</td>`, (entry) => { Object.keys(entry).forEach(k => { const el = getEl({aerationTankVolume:'aerationTankVolume', aerationTankVSS:'aerationTankVSS', discardFlowRate:'discardFlowRate', discardVSS:'discardVSS', effluentFlowRate:'effluentFlowRate', effluentVSS:'effluentVSS', note:'sludgeAgeNote'}[k]); if(el) el.value = entry[k]; }); calculateSludgeAge(); showSection('sludgeAgeSection'); });
         setupHistoryListener('physicalChemicalCalculations', 'phyChem', 'physicalChemicalHistory', ['Efic. Turb. (%)', 'Efic. Cor (%)'], (entry) => `<td class="${getResultColorClass(entry.turbidityEfficiency, 'efficiency')}">${entry.turbidityEfficiency.toFixed(2)}</td><td class="${getResultColorClass(entry.colorEfficiency, 'efficiency')}">${entry.colorEfficiency.toFixed(2)}</td>`, (entry) => { Object.keys(entry).forEach(k => { const el = getEl({initialTurbidity:'phyChemInitialTurbidity', finalTurbidity:'phyChemFinalTurbidity', initialColor:'phyChemInitialColor', finalColor:'phyChemFinalColor', idealDosage:'phyChemIdealDosage', etaFlowRate:'phyChemEtaFlowRate', dosageUnit:'phyChemDosageUnit', note:'phyChemNote'}[k]); if(el) el.value = entry[k]; }); calculatePhysicalChemical(); showSection('physicalChemicalSection'); });
         setupHistoryListener('organicLoadCalculations', 'organic', 'organicLoadHistory', ['Carga Afluente (kg/dia)', 'Eficiência (%)'], (entry) => `<td>${entry.influentLoad.toFixed(2)}</td><td class="${getResultColorClass(entry.efficiency, 'efficiency')}">${entry.efficiency.toFixed(2)}</td>`, (entry) => { Object.keys(entry).forEach(k => { const el = getEl({influentConcentration:'organicInfluentConcentration', effluentConcentration:'organicEffluentConcentration', flowRate:'organicLoadFlowRate', note:'organicLoadNote'}[k]); if(el) el.value = entry[k]; }); calculateOrganicLoad(); showSection('organicLoadSection'); });
-    };
+    }
 
     // Função de inicialização do Firebase
-    const initializeFirebase = () => {
+    function initializeFirebase() {
         if (!firebaseConfig.apiKey) { console.warn("Configuração do Firebase não encontrada."); getEl('userIdDisplay').textContent = `DB Offline`; setSaveButtonsState(false); return; }
         try {
             const app = initializeApp(firebaseConfig);
@@ -246,10 +246,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             });
         } catch (e) { console.error("Erro fatal ao inicializar Firebase SDK:", e); getEl('userIdDisplay').textContent = `DB Offline`; setSaveButtonsState(false); }
-    };
+    }
 
     // --- 3. EXECUÇÃO INICIAL E EVENT LISTENERS ---
-    const initializeAppLogic = () => {
+    function initializeAppLogic() {
         const navButtons = { 'dashboardSection': 'showDashboard', 'sludgeAgeSection': 'showSludgeAge', 'physicalChemicalSection': 'showPhysicalChemical', 'organicLoadSection': 'showOrganicLoad', 'settingsSection': 'showSettings', 'howItWorksSection': 'showHowItWorks' };
         Object.entries(navButtons).forEach(([sectionId, btnId]) => getEl(btnId).addEventListener('click', () => showSection(sectionId)));
         
@@ -271,7 +271,7 @@ document.addEventListener('DOMContentLoaded', () => {
         setSaveButtonsState(false);
         showSection('dashboardSection');
         initializeFirebase();
-    };
+    }
 
     initializeAppLogic();
 });
